@@ -22,17 +22,27 @@ def fetch_listings(max_listings=50):
     print(f"Fetching listings from {BASE_URL}...", file=sys.stderr)
 
     try:
-        response = requests.get(BASE_URL, timeout=30)
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
+        }
+        response = requests.get(BASE_URL, timeout=30, headers=headers)
         response.raise_for_status()
     except requests.RequestException as e:
         print(f"ERROR: Failed to fetch listings: {e}", file=sys.stderr)
         return []
 
-    soup = BeautifulSoup(response.content, "html.parser")
+    soup = BeautifulSoup(response.text, "html.parser")
     listings = []
 
-    # Find all listing tables
-    for table in soup.find_all("table", width="728"):
+    # Find all listing tables - try multiple approaches
+    tables = soup.find_all("table", width="728")
+    if not tables:
+        # Try alternative selector
+        tables = soup.find_all("table", cellpadding="1")
+
+    print(f"DEBUG: Found {len(tables)} tables", file=sys.stderr)
+
+    for table in tables:
         listing = parse_listing(table)
         if listing:
             listings.append(listing)

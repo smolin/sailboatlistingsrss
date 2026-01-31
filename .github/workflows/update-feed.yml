@@ -1,0 +1,50 @@
+# GitHub Actions workflow to update sailboat listings RSS feed
+# Related file: scraper.py
+
+name: Update RSS Feed
+
+on:
+  schedule:
+    # Run every 6 hours
+    - cron: '0 */6 * * *'
+  workflow_dispatch:  # Allow manual trigger
+  push:
+    branches:
+      - main
+
+jobs:
+  update-feed:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+      
+      - name: Run scraper
+        run: |
+          python scraper.py
+      
+      - name: Commit and push if changed
+        run: |
+          git config user.name "GitHub Actions Bot"
+          git config user.email "actions@github.com"
+          git add feed.xml
+          
+          if git diff --staged --quiet; then
+            echo "No changes to feed.xml"
+          else
+            git commit -m "Update RSS feed - $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+            git push
+          fi

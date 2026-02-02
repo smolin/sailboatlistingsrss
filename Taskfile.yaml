@@ -1,0 +1,46 @@
+# Taskfile for sailboatlistings RSS feed scraper
+# Run with: task <command>
+# Install task: brew install go-task/tap/go-task
+
+version: '3'
+
+tasks:
+  update:
+    desc: Update the RSS feed by running the scraper
+    cmds:
+      - venv/bin/python3 scraper.py
+    silent: false
+
+  update-and-push:
+    desc: Update the RSS feed and push to GitHub
+    cmds:
+      - venv/bin/python3 scraper.py
+      - git add feed.xml
+      - git diff --staged --quiet || (git commit -m "Update RSS feed - $(date -u '+%Y-%m-%d %H:%M:%S UTC')" && git push --no-verify)
+    silent: false
+
+  test:
+    desc: Test the scraper without generating feed.xml
+    cmds:
+      - venv/bin/python3 -c "from scraper import fetch_listings; listings = fetch_listings(5); print(f'Successfully fetched {len(listings)} listings')"
+    silent: false
+
+  install:
+    desc: Install Python dependencies
+    cmds:
+      - venv/bin/python3 -m pip install -r requirements.txt
+    silent: false
+
+  setup:
+    desc: Set up the virtual environment and install dependencies
+    cmds:
+      - python3 -m venv venv
+      - venv/bin/python3 -m pip install --upgrade pip
+      - venv/bin/python3 -m pip install -r requirements.txt
+    silent: false
+
+  clean:
+    desc: Clean up generated files
+    cmds:
+      - rm -f feed.xml
+    silent: false
